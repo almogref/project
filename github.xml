@@ -1,0 +1,7 @@
+<application>
+  <component name="GithubAccounts">
+    <account id="7bc224fd-a851-4b12-9905-61d792c2634c" name="almogref">
+      <server host="github.com" />
+    </account>
+  </component>
+</application>
