@@ -1,0 +1,155 @@
+-module(comm).
+-behaviour(gen_server).
+
+
+-export([start_link/0]).
+
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+  terminate/2, code_change/3]).
+
+-export([handleMore/2,splitUtilities/2]).
+
+% --- gen_server functions -----
+% -----------------------------
+
+start_link() -> gen_server:start_link({local, comm}, comm, [], []).
+
+init([]) ->
+  {ok, #{registers => 0, 1 => {dead,[]}, 2 => {dead,[]}, 3 =>  {dead,[]}, 4 =>  {dead,[]}, list_mem => [], loopi => dead}}.
+
+terminate(_Reason, _State) -> ok.
+
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
+
+
+handle_call(Request, From, State = #{registers := OldNum, list_mem := Members}) ->
+  case Request of
+    {register} ->
+                    if
+                      OldNum + 1 =:= 4 ->
+                                          graphic:start_link(comm),
+                                          erlang:monitor_node(From,true),
+                                          % reply to the remote node 'ok' and saves him in the States - { id => node, node => id }
+                                          {reply,{ok,OldNum + 1},State#{registers := OldNum + 1, OldNum + 1 := {From,[]}, From := OldNum + 1,
+                                            list_mem := [From]++ Members}};
+                      true ->             erlang:monitor_node(From,true),
+                                          {reply,{ok,OldNum + 1},State#{registers := OldNum + 1, OldNum + 1 := {From,[]}, From := OldNum + 1,
+                                            list_mem := [From]++ Members}}
+                    end;
+
+    _           ->    {noreply, State}
+  end.
+
+
+handle_cast(_Msg, State) ->
+  case _Msg of
+    {package,Data}  ->          gen_server:cast(graphic,Data);
+    %{birds,List,CrashId}  ->    sendBirds(List,CrashId),{noreply, State};               % Sends the 1/4 of data (list of actors) to graphic
+    _     ->                    {noreply,State}
+  end.
+
+
+handle_info(Msg, State = #{registers := Num, list_mem := Members, 1 := {N_1,_}, 2 := {N_2,_},
+  3 := {N_3,_}, 4 := {N_4,_}}) ->
+  case Msg of
+    % creates the process who's gonna handle the asks for more data from other nodes
+    {go,FirstData} ->
+                            ListOfLocations = gen_Locations(250,FirstData),
+                            ListDis = distribute(Members,{250,250},ListOfLocations,[],[],[],[]),
+                            Loopi = spawn(fun() -> loopByTime(Members,ListDis) end),
+                            {noreply,State#{loopi := Loopi, 1 := {N_1,ListDis(1)},
+                             2 := {N_2,ListDis(2)}, 3 := {N_3,ListDis(3)} , 4 := {N_4,ListDis(4)}}};
+
+    % update values from the user
+    {update,Data}  ->
+                        ListDis = handleMore(Data,Members),
+                        {noreply,State#{1 := {N_1,ListDis(1)},
+                        2 := {N_2,ListDis(2)}, 3 := {N_3,ListDis(3)} , 4 := {N_4,ListDis(4)}}};
+    % The user ask to close the program
+     stop ->            close(),
+                        {noreply,State};
+    % node is down :(
+    {nodedown, Node} -> CrashId = maps:get(Node,State),
+                        ListOfCrashed = element(2,maps:get(CrashId,State)),
+                        NewMembers = lists:delete(Node,Members),
+                        NewState = State#{registers := Num - 1, CrashId := {dead,[]}, Node := dead,
+                        list_mem := NewMembers},
+                        handleCrashes(ListOfCrashed,CrashId,NewState),
+                        gen_server:cast(graphic,{down,Num-1}),
+                        {noreply,NewState};  % update the status with the right nodes alive
+
+    % dont care
+    _    ->             {noreply,State}
+  end.
+
+
+% ----------- handle_call - FUNCTIONS ------------
+% ------------------------------------------------
+
+
+splitUtilities(Data,Members) ->
+  ListOfLocations = gen_Locations(250,Data),
+  distribute(Members,{250,250},ListOfLocations,[],[],[],[]).
+
+
+gen_Locations(_,0)->[];
+gen_Locations(Dimensions,N)->
+  [gen_Location(Dimensions) | gen_Locations(Dimensions,N-1) ].
+
+
+gen_Location({Width,Height}) -> {rand:uniform(Width),rand:uniform(Height)}.
+
+
+
+%FLOCKS == [{node name,ip},..]
+distribute(_,[],_,S1,S2,S3,S4)-> [S1,S2,S3,S4];
+
+distribute(Flocks,[Loc|T], Dimensions,S1,S2,S3,S4)->
+  {Width,Height} = Dimensions,
+  {X,Y} = Loc,
+  Border_W = Width/2,
+  Border_H = Height/2,
+  if X < Border_W ->
+    if Y < Border_H -> distribute(Flocks,T,Dimensions,S1, S2 ++ [Loc],S3,S4);
+      true-> distribute(Flocks,T,Dimensions,S1, S2,S3 ++ [Loc],S4) end;
+    true->
+      if Y < Border_H -> distribute(Flocks,T,Dimensions,S1 ++ [Loc], S2,S3,S4);
+        true-> distribute(Flocks,T,Dimensions,S1, S2,S3 ,S4 ++ [Loc])  end
+  end.
+
+% ----------- handle_info - FUNCTIONS ------------
+% ------------------------------------------------
+
+ % gets the birds of the crashed node and sends to his neighbour
+handleCrashes(ListOfCrashed,CrashId, #{1 := {N_1,_}, 2 := {N_2,_},
+              3 := {N_3,_}, 4 := {N_4,_}})  ->
+  case CrashId of
+    1 ->
+      gen_server:cast(N_4,flock_v4,ListOfCrashed);
+    4 ->
+      gen_server:cast(N_3,flock_v4,ListOfCrashed);
+    3 ->
+      gen_server:cast(N_2,flock_v4,ListOfCrashed);
+    2 ->
+      gen_server:cast(N_1,flock_v4,ListOfCrashed)
+  end.
+
+
+% Generate more actors
+handleMore(Data,State) ->
+  ListOfLocations = gen_Locations(250,Data),
+  NumProb =  rand:uniform(4),
+  rpc:cast(maps:get(NumProb,State),flock_v4,to_flock,{add,ListOfLocations}).
+
+
+close() ->
+  done.
+
+% ------------------------------------------------
+% ------------------------------------------------
+
+loopByTime(Members,ListOfLists) ->
+  done.
+
+
+
