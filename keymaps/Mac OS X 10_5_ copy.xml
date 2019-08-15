@@ -1,10 +1,9 @@
 <keymap version="1" name="Mac OS X 10.5+ copy" parent="Mac OS X 10.5+">
   <action id="$Undo">
-    <keyboard-shortcut first-keystroke="meta z" />
-    <keyboard-shortcut first-keystroke="meta q" />
+    <keyboard-shortcut first-keystroke="meta back_quote" />
   </action>
   <action id="Editor Undo">
-    <keyboard-shortcut first-keystroke="meta q" />
+    <keyboard-shortcut first-keystroke="meta back_quote" />
   </action>
   <action id="Exit" />
 </keymap>
