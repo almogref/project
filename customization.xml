@@ -1,9 +1,16 @@
 <application>
   <component name="com.intellij.ide.ui.customization.CustomActionsSchema">
-    <group value="Git.Menu" is_group="true" action_type="1" position="1">
+    <group value="Vcs.Push" is_action="true" action_type="1" position="1">
       <path value="root" />
       <path value="Main Toolbar" />
       <path value="MainToolBarSettings" />
+      <option name="myInitialPosition" value="-1" />
+    </group>
+    <group value="Vcs.Push" is_action="true" action_type="1" position="1">
+      <path value="root" />
+      <path value="Main Toolbar" />
+      <path value="MainToolBarSettings" />
+      <path value="VCS Actions" />
       <option name="myInitialPosition" value="-1" />
     </group>
     <group value="MainMenu" is_group="true" action_type="1" position="1">
@@ -13,6 +20,19 @@
       <path value="VCS/LVCS Actions" />
       <path value="Version Control Group" />
       <path value="GitFileActions" />
+      <option name="myInitialPosition" value="-1" />
+    </group>
+    <group value="Vcs.Push" is_action="true" action_type="1" position="1">
+      <path value="root" />
+      <path value="Navigation Bar Toolbar" />
+      <path value="NavBarVcsGroup" />
+      <path value="VcsNavBarToobarActions" />
+      <option name="myInitialPosition" value="-1" />
+    </group>
+    <group value="Git.Menu" is_group="true" action_type="1" position="2">
+      <path value="root" />
+      <path value="Main Toolbar" />
+      <path value="MainToolBarSettings" />
       <option name="myInitialPosition" value="-1" />
     </group>
     <group value="CheckinProject" is_action="true" action_type="1" position="2">
