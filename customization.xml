@@ -24,5 +24,10 @@
       <path value="GitFileActions" />
       <option name="myInitialPosition" value="-1" />
     </group>
+    <group value="CheckinFiles" is_action="true" action_type="1" position="23">
+      <path value="root" />
+      <path value="Favorites View Popup Menu" />
+      <option name="myInitialPosition" value="-1" />
+    </group>
   </component>
 </application>
