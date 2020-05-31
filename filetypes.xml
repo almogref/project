@@ -3,6 +3,7 @@
     <extensionMap>
       <mapping pattern="worker" type="CLASS" />
       <mapping pattern="workerd" type="CLASS" />
+      <mapping pattern="Main" type="CLASS" />
       <mapping pattern="test" type="JAVA" />
       <mapping pattern="hey" type="JAVA" />
     </extensionMap>
